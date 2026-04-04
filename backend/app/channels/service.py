@@ -18,6 +18,7 @@ _CHANNEL_REGISTRY: dict[str, str] = {
     "feishu": "app.channels.feishu:FeishuChannel",
     "slack": "app.channels.slack:SlackChannel",
     "telegram": "app.channels.telegram:TelegramChannel",
+    "wechat": "app.channels.wechat:WechatChannel",
     "wecom": "app.channels.wecom:WeComChannel",
 }
 
@@ -98,6 +99,7 @@ class ChannelService:
         """Stop all channels and the manager."""
         for name, channel in list(self._channels.items()):
             try:
+                self.manager.unregister_channel(name)
                 await channel.stop()
                 logger.info("Channel %s stopped", name)
             except Exception:
@@ -112,6 +114,7 @@ class ChannelService:
         """Restart a specific channel. Returns True if successful."""
         if name in self._channels:
             try:
+                self.manager.unregister_channel(name)
                 await self._channels[name].stop()
             except Exception:
                 logger.exception("Error stopping channel %s for restart", name)
@@ -143,6 +146,7 @@ class ChannelService:
             channel = channel_cls(bus=self.bus, config=config)
             await channel.start()
             self._channels[name] = channel
+            self.manager.register_channel(name, channel)
             logger.info("Channel %s started", name)
             return True
         except Exception:
